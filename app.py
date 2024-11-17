@@ -3,7 +3,7 @@ import joblib
 import pandas as pd
 
 # Load the saved model
-model_path = "ultimate_6_model.pkl"  # Ensure the path matches the saved model
+model_path = "Ultimate_6_model.pkl"  # Ensure the path matches the saved model
 rf_model = joblib.load(model_path)
 
 # Load the dataset to get the exact options for each parameter
