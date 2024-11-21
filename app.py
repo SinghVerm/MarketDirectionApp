@@ -1,54 +1,97 @@
 import streamlit as st
-import joblib
 import pandas as pd
+import joblib
 
-# Load the optimized model
-model_path = "Optimized_RF_Model_RandomSearch.pkl"  # Path to the optimized model file
-rf_model = joblib.load(model_path)
+# Load the trained model
+model_path = "Ultimate5_updated.pkl"  # Ensure this file is in your working directory
+model = joblib.load(model_path)
 
-# Define the hardcoded encodings based on your dataset
-encoding_map = {
-    "Previous_Day_Trend": {0: "Double Top", 1: "Double Bottom", 2: "Long", 3: "No View", 4: "Short"},
-    "Opening_Position": {0: "Above Resistance", 1: "Below Support", 2: "Middle", 3: "Resistance", 4: "Support"},
-    "2hr_Zone_Touch": {
-        0: "No Touch", 1: "Resistance H Above", 2: "Resistance H Below", 3: "Resistance H In Zone",
-        4: "Resistance L Above", 5: "Resistance L Below", 6: "Resistance L In Zone",
-        7: "Support H", 8: "Support H Above", 9: "Support H In Zone", 10: "Support L",
-        11: "Support L Above", 12: "Support L Below", 13: "Support L In Zone"
-    },
-    "30m_Zone_Touch": {
-        0: "No Touch", 1: "Touched Both", 2: "Touched Both Above", 3: "Touched Both Below",
-        4: "Touched Both In Resistance Zone", 5: "Touched Both In Support Zone", 6: "Touched Both Middle",
-        7: "Touched Resistance Above", 8: "Touched Resistance Below", 9: "Touched Support Above",
-        10: "Touched Support Below"
-    },
-    "Position_PDH": {0: "Above", 1: "Below", 2: "No Touch"},
-    "30m_Candle": {
-        0: "Doji", 1: "Green", 2: "Green Hammer", 3: "Inverted Hammer", 4: "Red", 5: "Red Hammer",
-        6: "Shooting Star", 7: "Strong Green", 8: "Strong Red"
-    }
+# Dropdown options based on your manual encoding
+previous_day_trend_options = {
+    "Double Bottom": 0,
+    "Double Top": 1,
+    "Long": 2,
+    "No View": 3,
+    "Short": 4
 }
 
-# Reverse encoding for input transformation
-decoding_map = {col: {v: k for k, v in mapping.items()} for col, mapping in encoding_map.items()}
+opening_position_options = {
+    "Above Resistance": 0,
+    "Below Support": 1,
+    "Middle": 2,
+    "Resistance": 3,
+    "Support": 4
+}
 
-# Streamlit App
-st.title("Market Direction Prediction App")
-st.markdown("This app predicts the market direction based on the parameters you select.")
+zone_touch_30m_options = {
+    "No Touch": 0,
+    "Touched Both Above": 1,
+    "Touched Both Below": 2,
+    "Touched Both In Resistance Zone": 3,
+    "Touched Both In Support Zone": 4,
+    "Touched Both Middle": 5,
+    "Touched Resistance Above": 6,
+    "Touched Resistance Below": 7,
+    "Touched Support Above": 8,
+    "Touched Support Below": 9
+}
 
-# Create dropdowns for each parameter with user-friendly text
-user_input = {}
-for parameter, mapping in encoding_map.items():
-    user_input[parameter] = st.selectbox(f"Select {parameter}:", list(mapping.values()))
+position_pdh_options = {
+    "Above": 0,
+    "Below": 1,
+    "No Touch": 2
+}
 
-# Button to predict
+candle_options = {
+    "Doji": 0,
+    "Green": 1,
+    "Green Hammer": 2,
+    "Inverted Hammer": 3,
+    "Red": 4,
+    "Red Hammer": 5,
+    "Shooting Star": 6
+}
+
+# Title and dropdown inputs
+st.title("Dexter")
+
+# Input dropdowns for the 5 parameters
+previous_day_trend = st.selectbox(
+    "Previous Day Trend:",
+    options=list(previous_day_trend_options.keys())
+)
+opening_position = st.selectbox(
+    "Opening Position:",
+    options=list(opening_position_options.keys())
+)
+zone_touch_30m = st.selectbox(
+    "30M Zone Touch:",
+    options=list(zone_touch_30m_options.keys())
+)
+position_pdh = st.selectbox(
+    "PDH:",
+    options=list(position_pdh_options.keys())
+)
+candle = st.selectbox(
+    "30MCandle:",
+    options=list(candle_options.keys())
+)
+
+# Encode user inputs
+user_input = pd.DataFrame([{
+    "Previous_Day_Trend": previous_day_trend_options[previous_day_trend],
+    "30m_Zone_Touch": zone_touch_30m_options[zone_touch_30m],
+    "Opening_Position": opening_position_options[opening_position],
+    "Position_PDH": position_pdh_options[position_pdh],
+    "30m_Candle": candle_options[candle]
+}])
+
+# Predict and display result
 if st.button("Predict Market Direction"):
-    # Convert user inputs (text) to encoded numerical values
-    input_data = pd.DataFrame([{param: decoding_map[param][value] for param, value in user_input.items()}])
-    
-    # Predict using the model
-    prediction = rf_model.predict(input_data)[0]
-    prediction_label = "Long" if prediction == 0 else "Short"  # Adjust based on `Market_Direction` encoding
-    
-    # Display prediction
-    st.success(f"The predicted market direction is: **{prediction_label}**")
+    prediction = model.predict(user_input)[0]
+    probabilities = model.predict_proba(user_input)[0]
+    direction = "Long" if prediction == 0 else "Short"
+    confidence = probabilities[prediction] * 100
+
+    st.write(f"Predicted Market Direction: **{direction}**")
+    st.write(f"Model Confidence: **{confidence:.2f}%**")
