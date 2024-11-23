@@ -6,7 +6,7 @@ import joblib
 model = joblib.load("final_random_forest_combined_model.pkl")
 
 # Title of the app
-st.title("Market Direction Prediction App")
+st.title("Netrunner")
 
 # Define dropdown options for each feature
 previous_day_trend_options = {
@@ -78,7 +78,7 @@ if st.button("Predict Market Direction"):
 
     # Make prediction
     prediction = model.predict(input_data)[0]
-    prediction_label = "long" if prediction == 0 else "short"
+    prediction_label = "Long" if prediction == 0 else "Short"
 
     # Display the result
     st.subheader(f"Predicted Market Direction: {prediction_label}")
