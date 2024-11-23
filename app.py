@@ -85,5 +85,5 @@ if st.button("Predict Market Direction"):
 
     # Display predicted probabilities (optional)
     probabilities = model.predict_proba(input_data)[0]
-    st.write(f"Probability of long: {probabilities[0]:.2f}")
-    st.write(f"Probability of short: {probabilities[1]:.2f}")
+    st.write(f"Probability of Long: {probabilities[0]:.2f}")
+    st.write(f"Probability of Short: {probabilities[1]:.2f}")
