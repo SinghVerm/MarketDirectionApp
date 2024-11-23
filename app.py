@@ -2,11 +2,13 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load the trained model
-model_path = "Ultimate5_updated.pkl"  # Ensure this file is in your working directory
-model = joblib.load(model_path)
+# Load the trained Random Forest model
+model = joblib.load("final_random_forest_combined_model.pkl")
 
-# Dropdown options based on your manual encoding
+# Title of the app
+st.title("Market Direction Prediction App")
+
+# Define dropdown options for each feature
 previous_day_trend_options = {
     "Double Bottom": 0,
     "Double Top": 1,
@@ -21,19 +23,6 @@ opening_position_options = {
     "Middle": 2,
     "Resistance": 3,
     "Support": 4
-}
-
-zone_touch_30m_options = {
-    "No Touch": 0,
-    "Touched Both Above": 1,
-    "Touched Both Below": 2,
-    "Touched Both In Resistance Zone": 3,
-    "Touched Both In Support Zone": 4,
-    "Touched Both Middle": 5,
-    "Touched Resistance Above": 6,
-    "Touched Resistance Below": 7,
-    "Touched Support Above": 8,
-    "Touched Support Below": 9
 }
 
 position_pdh_options = {
@@ -52,46 +41,49 @@ candle_options = {
     "Shooting Star": 6
 }
 
-# Title and dropdown inputs
-st.title("Dexter")
+# Collect user inputs for the features using dropdowns
+st.header("Input Features")
 
-# Input dropdowns for the 5 parameters
 previous_day_trend = st.selectbox(
-    "Previous Day Trend:",
-    options=list(previous_day_trend_options.keys())
+    "Previous Day Trend:", list(previous_day_trend_options.keys())
 )
 opening_position = st.selectbox(
-    "Opening Position:",
-    options=list(opening_position_options.keys())
-)
-zone_touch_30m = st.selectbox(
-    "30M Zone Touch:",
-    options=list(zone_touch_30m_options.keys())
+    "Opening Position:", list(opening_position_options.keys())
 )
 position_pdh = st.selectbox(
-    "PDH:",
-    options=list(position_pdh_options.keys())
+    "Position PDH:", list(position_pdh_options.keys())
 )
-candle = st.selectbox(
-    "30MCandle:",
-    options=list(candle_options.keys())
+candle_30m = st.selectbox(
+    "30-minute Candle:", list(candle_options.keys())
 )
 
-# Encode user inputs
-user_input = pd.DataFrame([{
-    "Previous_Day_Trend": previous_day_trend_options[previous_day_trend],
-    "30m_Zone_Touch": zone_touch_30m_options[zone_touch_30m],
-    "Opening_Position": opening_position_options[opening_position],
-    "Position_PDH": position_pdh_options[position_pdh],
-    "30m_Candle": candle_options[candle]
-}])
+# Convert the selected labels to the corresponding numeric values for the model
+previous_day_trend_value = previous_day_trend_options[previous_day_trend]
+opening_position_value = opening_position_options[opening_position]
+position_pdh_value = position_pdh_options[position_pdh]
+candle_30m_value = candle_options[candle_30m]
 
-# Predict and display result
+# Button to make prediction
 if st.button("Predict Market Direction"):
-    prediction = model.predict(user_input)[0]
-    probabilities = model.predict_proba(user_input)[0]
-    direction = "Long" if prediction == 0 else "Short"
-    confidence = probabilities[prediction] * 100
+    # Create a DataFrame for the input data
+    input_data = pd.DataFrame({
+        'Previous_Day_Trend': [previous_day_trend_value],
+        'Opening_Position': [opening_position_value],
+        'Position_PDH': [position_pdh_value],
+        '30m_Candle': [candle_30m_value]
+    })
+    
+    # Ensure feature order matches the trained model
+    input_data = input_data[model.feature_names_in_]
 
-    st.write(f"Predicted Market Direction: **{direction}**")
-    st.write(f"Model Confidence: **{confidence:.2f}%**")
+    # Make prediction
+    prediction = model.predict(input_data)[0]
+    prediction_label = "long" if prediction == 0 else "short"
+
+    # Display the result
+    st.subheader(f"Predicted Market Direction: {prediction_label}")
+
+    # Display predicted probabilities (optional)
+    probabilities = model.predict_proba(input_data)[0]
+    st.write(f"Probability of long: {probabilities[0]:.2f}")
+    st.write(f"Probability of short: {probabilities[1]:.2f}")
